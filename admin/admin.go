@@ -14,17 +14,38 @@ func main() {
 	}
 	defer admin.Close()
 
-	topicName := "test_topic"
-	topicDetail := sarama.TopicDetail{
-		NumPartitions:     1,
-		ReplicationFactor: 1,
+	topics := map[string]sarama.TopicDetail{
+		// test topics only
+		"test_topic": {
+			NumPartitions:     1,
+			ReplicationFactor: 1,
+		},
+		// topics for Order Example
+		"OrderEventsTopic": {
+			NumPartitions:     1,
+			ReplicationFactor: 1,
+		},
+		"InventoryEventsTopic": {
+			NumPartitions:     1,
+			ReplicationFactor: 1,
+		},
+		"ShippingEventsTopic": {
+			NumPartitions:     1,
+			ReplicationFactor: 1,
+		},
+		"PaymentEventsTopic": {
+			NumPartitions:     1,
+			ReplicationFactor: 1,
+		},
 	}
 
-	err = createIfNotExist(admin, topicName, topicDetail)
-	if err != nil {
-		log.Printf("Error creating topic: %v\n", err)
-	} else {
-		log.Printf("Topic %s created successfully or already exists\n", topicName)
+	for topicName, topicDetail := range topics {
+		err = createIfNotExist(admin, topicName, topicDetail)
+		if err != nil {
+			log.Printf("Error creating topic %s: %v\n", topicName, err)
+		} else {
+			log.Printf("Topic %s created successfully or already exists\n", topicName)
+		}
 	}
 }
 
