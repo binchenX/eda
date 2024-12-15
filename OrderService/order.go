@@ -6,6 +6,8 @@ import (
 )
 
 func main() {
+	initialize()
+
 	go consumeEvents()
 
 	http.HandleFunc("/order", orderHandler)

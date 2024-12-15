@@ -17,7 +17,7 @@ type Order struct {
 
 var producer sarama.SyncProducer
 
-func init() {
+func initialize() {
 	var err error
 	config := sarama.NewConfig()
 	config.Producer.Return.Successes = true
@@ -26,6 +26,8 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	InitDb()
 }
 
 func orderHandler(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +44,13 @@ func orderHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	order.OrderID = uuid.New().String()
+
+	err = SaveOrder(order)
+	if err != nil {
+		http.Error(w, "Error saving order to database", http.StatusInternalServerError)
+		return
+	}
+
 	orderEvent, err := json.Marshal(order)
 	if err != nil {
 		http.Error(w, "Error encoding order event", http.StatusInternalServerError)
