@@ -31,7 +31,9 @@ services:
       retries: 5
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:latest.arm64
+    build:
+      context: ./connectors
+      dockerfile: Dockerfile
     ports:
       - "8083:8083"
     environment:
@@ -46,7 +48,7 @@ services:
       CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
       CONNECT_REST_PORT: 8083
-      CONNECT_PLUGIN_PATH: /usr/share/java
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components
       CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
       CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1

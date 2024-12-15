@@ -1,0 +1,13 @@
+{
+    "name": "postgres-connector",
+    "config": {
+        "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+        "tasks.max": "1",
+        "connection.url": "jdbc:postgresql://postgres-order:5432/orders?user=postgres&password=postgres",
+        "table.whitelist": "orders",
+        "mode": "incrementing",
+        "incrementing.column.name": "id",
+        "topic.prefix": "OrderTopic-",
+        "poll.interval.ms": "1000"
+    }
+}
