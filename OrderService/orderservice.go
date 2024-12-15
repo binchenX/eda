@@ -30,6 +30,26 @@ func initialize() {
 	InitDb()
 }
 
+func sendOrderCreateEvent(order Order) error {
+	orderEvent, err := json.Marshal(order)
+	if err != nil {
+		return err
+	}
+
+	msg := &sarama.ProducerMessage{
+		Topic: "OrderEventsTopic",
+		Value: sarama.StringEncoder(orderEvent),
+	}
+
+	partition, offset, err := producer.SendMessage(msg)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Order event is stored in topic(%s)/partition(%d)/offset(%d)\n", "OrderEventsTopic", partition, offset)
+	return nil
+}
+
 func orderHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
@@ -45,32 +65,24 @@ func orderHandler(w http.ResponseWriter, r *http.Request) {
 
 	order.OrderID = uuid.New().String()
 
+	// save order to database
 	err = SaveOrder(order)
 	if err != nil {
 		http.Error(w, "Error saving order to database", http.StatusInternalServerError)
 		return
 	}
 
-	orderEvent, err := json.Marshal(order)
-	if err != nil {
-		http.Error(w, "Error encoding order event", http.StatusInternalServerError)
-		return
-	}
-
-	msg := &sarama.ProducerMessage{
-		Topic: "OrderEventsTopic",
-		Value: sarama.StringEncoder(orderEvent),
-	}
-
-	partition, offset, err := producer.SendMessage(msg)
-	if err != nil {
-		http.Error(w, "Error sending message to Kafka", http.StatusInternalServerError)
-		return
-	}
-
-	log.Printf("Order event is stored in topic(%s)/partition(%d)/offset(%d)\n", "OrderEventsTopic", partition, offset)
+	// todo: save order status to database
 	orderStatusMap.Store(order.OrderID, "Order Created")
 
+	// send order create event
+	err = sendOrderCreateEvent(order)
+	if err != nil {
+		http.Error(w, "Error sending order create event", http.StatusInternalServerError)
+		return
+	}
+
+	// response with order ID
 	response := map[string]string{
 		"orderId": order.OrderID,
 	}
