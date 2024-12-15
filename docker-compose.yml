@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 services:
   zookeeper:
     image: bitnami/zookeeper:latest
@@ -6,6 +6,11 @@ services:
       - "2181:2181"
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
+    healthcheck:
+      test: ["CMD", "zkServer.sh", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kafka:
     image: wurstmeister/kafka:2.12-2.1.1
@@ -15,3 +20,15 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+
+  postgres-order:
+    image: postgres:13
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: orders
