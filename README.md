@@ -1,21 +1,15 @@
 # Order System
 
-This project demonstrates an Event-Driven Architecture (EDA) for an order processing system using Go and Kafka. The system includes multiple services that communicate through Kafka topics to handle order creation, inventory management, shipping, and payment processing.
+This project aims to showcase an Event-Driven Architecture (EDA) design for an order processing system using Go and Kafka. Specifically, it aims to provide a working example that demonstrates the following in a local environment from scratch.
 
-## Services and Queues
+- How to implement basic `producer` and `consumer`
+- How to use `schema registry`
+- How to use `connector`
 
-### Services
-1. **OrderService**: Handles order creation and publishes order events.
-2. **InventoryService**: Consumes order events, checks inventory, and publishes inventory events.
-3. **ShippingService**: Consumes inventory events and publishes shipping events.
-4. **PaymentService**: Consumes shipping events, processes payments, and publishes payment events.
-5. **OrderStatusService**: Consumes all relevant events and maintains the current status of each order.
+It looks like this in high level.
 
-### Queues (Kafka Topics)
-1. **OrderEventsTopic**: Where order events are published.
-2. **InventoryEventsTopic**: Where inventory events are published.
-3. **ShippingEventsTopic**: Where shipping events are published.
-4. **PaymentEventsTopic**: Where payment events are published.
+![arch](image.png)
+
 
 ## Getting Started
 
@@ -24,13 +18,9 @@ This project demonstrates an Event-Driven Architecture (EDA) for an order proces
 - Docker Compose
 - Go
 
-### Start Kafka
+### Start the infra
 
-To start Kafka and Zookeeper, run the following command:
-
-```
-docker-compose up
-```
+Run `docker-compose up` to start all the necessary infrastructure (Kafka, Postgres, Schema Registry, Connector).
 
 ### Build and Run Services
 
@@ -118,3 +108,18 @@ kafka-console-producer.sh --topic test_topic --broker-list localhost:9092
 ```
 kafka-console-consumer.sh --topic test_topic --bootstrap-server localhost:9092 --from-beginning
 ```
+
+## Services and Queues
+
+### Services
+1. **OrderService**: Handles order creation and publishes order events.
+2. **InventoryService**: Consumes order events, checks inventory, and publishes inventory events.
+3. **ShippingService**: Consumes inventory events and publishes shipping events.
+4. **PaymentService**: Consumes shipping events, processes payments, and publishes payment events.
+5. **OrderStatusService**: Consumes all relevant events and maintains the current status of each order.
+
+### Queues (Kafka Topics)
+1. **OrderEventsTopic**: Where order events are published.
+2. **InventoryEventsTopic**: Where inventory events are published.
+3. **ShippingEventsTopic**: Where shipping events are published.
+4. **PaymentEventsTopic**: Where payment events are published.
