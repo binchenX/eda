@@ -2,7 +2,10 @@ module binchenx/inventory
 
 go 1.22.1
 
-require github.com/IBM/sarama v1.43.3
+require (
+	github.com/IBM/sarama v1.43.3
+	github.com/linkedin/goavro/v2 v2.13.0
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
