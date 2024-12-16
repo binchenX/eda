@@ -55,3 +55,7 @@ register_schema "order.avsc" "OrderEventTopic-value" "$SCHEMA_REGISTRY_URL"
 
 # List all subjects and their schema versions with IDs
 list_subjects "$SCHEMA_REGISTRY_URL"
+
+
+# check a schema by ID
+# curl -X GET http://localhost:8081/schemas/ids/3 | jq -r '.schema' | jq .

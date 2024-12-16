@@ -2,11 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 
 	"github.com/IBM/sarama"
 	"github.com/google/uuid"
+	"github.com/linkedin/goavro/v2"
 )
 
 type Order struct {
@@ -16,6 +19,7 @@ type Order struct {
 }
 
 var producer sarama.SyncProducer
+var avroCodec *goavro.Codec
 
 func initialize() {
 	var err error
@@ -28,18 +32,68 @@ func initialize() {
 	}
 
 	InitDb()
+
+	// Fetch schema from schema registry
+	schema, err := fetchSchemaFromRegistry("http://localhost:8081/subjects/OrderEventTopic-value/versions/latest")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Initialize Avro codec
+	avroCodec, err = goavro.NewCodec(schema)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func fetchSchemaFromRegistry(url string) (string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("failed to fetch schema: %s", resp.Status)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return "", err
+	}
+
+	schema, ok := result["schema"].(string)
+	if !ok {
+		return "", fmt.Errorf("invalid schema format")
+	}
+
+	return schema, nil
 }
 
 func sendOrderCreateEvent(order Order) error {
-	orderEvent, err := json.Marshal(order)
+	// Convert Order struct to Avro binary
+	orderMap := map[string]interface{}{
+		"orderId": order.OrderID,
+		"userId":  order.UserID,
+		"items":   order.Items,
+	}
+	binaryOrder, err := avroCodec.BinaryFromNative(nil, orderMap)
 	if err != nil {
 		return err
 	}
 
 	msg := &sarama.ProducerMessage{
 		Topic: "OrderEventsTopic",
-		Value: sarama.StringEncoder(orderEvent),
+		Value: sarama.ByteEncoder(binaryOrder),
 	}
+
+	// dump the Value to see the Avro binary
+	log.Printf("Avro binary: %v\n", msg.Value)
 
 	partition, offset, err := producer.SendMessage(msg)
 	if err != nil {
@@ -65,24 +119,20 @@ func orderHandler(w http.ResponseWriter, r *http.Request) {
 
 	order.OrderID = uuid.New().String()
 
-	// save order to database
 	err = SaveOrder(order)
 	if err != nil {
 		http.Error(w, "Error saving order to database", http.StatusInternalServerError)
 		return
 	}
 
-	// todo: save order status to database
-	orderStatusMap.Store(order.OrderID, "Order Created")
-
-	// send order create event
 	err = sendOrderCreateEvent(order)
 	if err != nil {
 		http.Error(w, "Error sending order create event", http.StatusInternalServerError)
 		return
 	}
 
-	// response with order ID
+	orderStatusMap.Store(order.OrderID, "Order Created")
+
 	response := map[string]string{
 		"orderId": order.OrderID,
 	}
