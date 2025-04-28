@@ -109,7 +109,7 @@ func main() {
 		// Process the order (e.g., update inventory)
 		status := processOrder(order)
 
-		// Send InventoryEvent (unchanged)
+		// Send InventoryEvent
 		sendInventoryEvent(order.OrderID, status)
 	}
 }
@@ -130,10 +130,10 @@ func processOrder(order Order) string {
 			log.Printf("Item %s inventory decremented. New inventory: %d\n", item, inventory[item])
 		} else {
 			log.Printf("Item %s is out of stock!\n", item)
-			return "failed"
+			return "FAILED"
 		}
 	}
-	return "ok"
+	return "OK"
 }
 
 func sendInventoryEvent(orderID, status string) {
