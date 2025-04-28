@@ -20,15 +20,21 @@ It looks like this in high level.
 
 ### Start the infra
 
-Run `docker-composer up` to start all the necessary infa ( kafka, postgres, regis)
+Start all the necessary infa ( kafka, postgres, regis)
 
 ```
-docker-compose up
+make up
 ```
 
 ### Build and Run Services
 
-Run the following services in separate tmux panels.
+```
+make run
+```
+
+<details>
+<summary>Or, you can run the following services in separate tmux panels</summary>
+
 
 1. **OrderService**:
 ```
@@ -54,6 +60,8 @@ Run the following services in separate tmux panels.
 
    The `OrderStatusService` is integrated into the `OrderService` and runs as part of it.
 
+</details>
+
 ### Create an Order
 
 To create an order, send a POST request to the `/order` endpoint:
@@ -73,6 +81,9 @@ curl -X GET "http://localhost:8080/order/status?orderId=<orderId>"
 Replace `<orderId>` with the actual order ID returned from the POST request.
 
 
+
+<details>
+<summary>Appendix</summary>
 ## Appendix  - Simple producer and consumer
 
 ### producer and consumer - programmtically
@@ -127,3 +138,4 @@ kafka-console-consumer.sh --topic test_topic --bootstrap-server localhost:9092 -
 2. **InventoryEventsTopic**: Where inventory events are published.
 3. **ShippingEventsTopic**: Where shipping events are published.
 4. **PaymentEventsTopic**: Where payment events are published.
+</detail>
