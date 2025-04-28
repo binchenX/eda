@@ -19,7 +19,8 @@ services:
     environment:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       # use host ip to ensure both app in host and app in container can connect to kafka
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.1.103:9092
+      # hack: need to change to your host ip 
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.1.100:9092
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     depends_on:
       zookeeper:
@@ -72,6 +73,12 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/subjects"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   postgres-order:
     image: postgres:13

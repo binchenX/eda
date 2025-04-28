@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/IBM/sarama"
 	"github.com/google/uuid"
@@ -47,32 +48,46 @@ func initialize() {
 }
 
 func fetchSchemaFromRegistry(url string) (string, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
+	maxRetries := 10
+	retryInterval := time.Second * 5
+	var lastErr error
 
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("failed to fetch schema: %s", resp.Status)
+	for i := 0; i < maxRetries; i++ {
+		resp, err := http.Get(url)
+		if err != nil {
+			lastErr = fmt.Errorf("failed to connect to Schema Registry: %v", err)
+			log.Printf("Attempt %d/%d: %v. Retrying in %v...", i+1, maxRetries, lastErr, retryInterval)
+			time.Sleep(retryInterval)
+			continue
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == http.StatusOK {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return "", fmt.Errorf("failed to read response body: %v", err)
+			}
+
+			var result map[string]interface{}
+			if err := json.Unmarshal(body, &result); err != nil {
+				return "", fmt.Errorf("failed to parse response JSON: %v", err)
+			}
+
+			schema, ok := result["schema"].(string)
+			if !ok {
+				return "", fmt.Errorf("invalid schema format in response")
+			}
+
+			log.Printf("Successfully fetched schema from Schema Registry")
+			return schema, nil
+		}
+
+		lastErr = fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		log.Printf("Attempt %d/%d: %v. Retrying in %v...", i+1, maxRetries, lastErr, retryInterval)
+		time.Sleep(retryInterval)
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	var result map[string]interface{}
-	if err := json.Unmarshal(body, &result); err != nil {
-		return "", err
-	}
-
-	schema, ok := result["schema"].(string)
-	if !ok {
-		return "", fmt.Errorf("invalid schema format")
-	}
-
-	return schema, nil
+	return "", fmt.Errorf("failed to fetch schema after %d attempts: %v", maxRetries, lastErr)
 }
 
 func sendOrderCreateEvent(order Order) error {
