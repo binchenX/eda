@@ -20,7 +20,11 @@ It looks like this in high level.
 
 ### Start the infra
 
-Run `docker-compose up` to start all the necessary infrastructure (Kafka, Postgres, Schema Registry, Connector).
+Run `docker-composer up` to start all the necessary infa ( kafka, postgres, regis)
+
+```
+docker-compose up
+```
 
 ### Build and Run Services
 
